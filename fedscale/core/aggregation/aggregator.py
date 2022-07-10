@@ -5,6 +5,7 @@ from fedscale.core.resource_manager import ResourceManager
 from fedscale.core import commons
 from fedscale.core.channels import job_api_pb2
 import fedscale.core.channels.job_api_pb2_grpc as job_api_pb2_grpc
+from fedscale.core.evofedlibs import init_resnet18
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -146,7 +147,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         """Load model"""
         assert self.args.engine == commons.PYTORCH, "Please define model for non-PyTorch models"
 
-        self.model = init_model()
+        self.model = init_resnet18(ratio=int(self.args.model))
 
         # Initiate model parameters dictionary <param_name, param>
         self.model_weights = self.model.state_dict()

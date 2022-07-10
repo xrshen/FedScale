@@ -12,6 +12,7 @@ from fedscale.core.execution.data_processor import collate, voice_collate_fn
 from fedscale.core import commons
 from fedscale.core.channels.channel_context import ClientConnections
 import fedscale.core.channels.job_api_pb2 as job_api_pb2
+from fedscale.core.evofedlibs import init_resnet18
 
 
 class Executor(object):
@@ -76,7 +77,7 @@ class Executor(object):
     def init_model(self):
         """Return the model architecture used in training"""
         assert self.args.engine == commons.PYTORCH, "Please override this function to define non-PyTorch models"
-        model = init_model()
+        model = init_resnet18(ratio = int(self.args.model))
         model = model.to(device=self.device)
         return model
 
