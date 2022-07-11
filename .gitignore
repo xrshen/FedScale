@@ -9,7 +9,7 @@
 *.e
 logs/
 pymp*
-./benchmark/dataset/*
+benchmark/dataset/*
 .DS_Store
 *.egg-info
 *logging

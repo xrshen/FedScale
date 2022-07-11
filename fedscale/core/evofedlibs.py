@@ -40,12 +40,9 @@ def widen_whole_model(torch_model, ratio: int = 1):
         return tails, inodes   
 
     tails, inodes = dfs(dag, manager.entry_idx)
-    # print(tails, inodes)
     head = [stripe_weight(dag.nodes[manager.entry_idx]['attr']['name'][0])]
-    # print(head)
     parents = head + inodes
     children = inodes + tails
-    print(head, inodes, tails)
     for parent in parents:
         parent_layer = get_model_layer(torch_model, parent)
         parent_param = parent_layer.state_dict()
@@ -89,7 +86,6 @@ def widen_whole_model(torch_model, ratio: int = 1):
                 bias = True if child_layer.bias is not None else False,
             )
         else:
-            print(child)
             new_child_param = widen_child_conv(child_param, mapping)
             new_child_layer = torch.nn.Conv2d(
                 len(mapping), child_layer.out_channels,
@@ -99,7 +95,6 @@ def widen_whole_model(torch_model, ratio: int = 1):
                 groups = child_layer.groups,
                 bias = True if child_layer.bias is not None else False
             )
-        print(child)
         new_child_layer.load_state_dict(new_child_param)
         set_model_layer(torch_model, new_child_layer, child)
     return torch_model
