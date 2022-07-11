@@ -2,6 +2,8 @@ from torchvision import models
 import torch
 from fedscale.core.architecture_manager import Architecture_Manager
 from fedscale.core.net2net import *
+from fedscale.core.fllibs import outputClass
+from fedscale.core.config_parser import args
 
 def widen_whole_model(torch_model, ratio: int = 1):
     dummy_input = torch.randn(10, 3, 32, 32)
@@ -100,5 +102,5 @@ def widen_whole_model(torch_model, ratio: int = 1):
     return torch_model
 
 def init_resnet18(ratio: int = 1):
-    base_model = models.resnet18()
+    base_model = models.resnet18(num_classes=outputClass[args.data_set])
     return widen_whole_model(base_model, ratio)
