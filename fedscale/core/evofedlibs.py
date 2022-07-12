@@ -6,6 +6,8 @@ from fedscale.core.fllibs import outputClass
 from fedscale.core.config_parser import args
 
 def widen_whole_model(torch_model, ratio: int = 1):
+    if ratio == 1:
+        return torch_model
     dummy_input = torch.randn(10, 3, 32, 32)
     manager = Architecture_Manager(dummy_input, 'test.onnx')
     manager.parse_model(torch_model)
@@ -29,13 +31,13 @@ def widen_whole_model(torch_model, ratio: int = 1):
             for node_id in dag.neighbors(query):
                 neighbors.append(node_id)
             if len(neighbors ) == 0:
-                if len(dag.nodes[query]['attr']['param_shapes']) != 0:
+                if len(dag.nodes[query]['attr']['name']) != 0:
                     tails.append(dag.nodes[query]['attr']['name'][0])
             else:
                 for neib in neighbors:
                     if neib not in visited:
                         stack.append(neib)
-                if len(dag.nodes[query]['attr']['param_shapes']) != 0 and query != entry:
+                if len(dag.nodes[query]['attr']['name']) != 0 and query != entry:
                     inodes.append(dag.nodes[query]['attr']['name'][0])
         tails = [stripe_weight(tail) for tail in tails]
         inodes = [stripe_weight(inode) for inode in inodes]

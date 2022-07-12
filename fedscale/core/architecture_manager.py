@@ -37,7 +37,7 @@ class Architecture_Manager(object):
         onnx_model = onnx.load(self.model_path)
         graph = onnx_model.graph
         nodes = [node for node in onnx_model.graph.node]
-        # get shapes of nodes
+        # get shapes of a part of nodes
         init = graph.initializer
         nodes_shape = {}
         param_names = set()
@@ -56,11 +56,14 @@ class Architecture_Manager(object):
         self.id2trainable_name = {}
         # construct nodes
         for idx, node in enumerate(nodes):
+            if 'Identity' in node.name:
+                continue
             for input_name in node.input:
-                if input_name not in param_names:
+                if 'input' in input_name or 'onnx::' in input_name:
                     node_inputs[idx].append(input_name)
                 else:
-                    node_param_shapes[idx].append(nodes_shape[input_name])
+                    if input_name in nodes_shape:
+                        node_param_shapes[idx].append(nodes_shape[input_name])
                     node_names[idx].append(input_name)
             for output_name in node.output:
                 node_outputs[idx].append(output_name)
