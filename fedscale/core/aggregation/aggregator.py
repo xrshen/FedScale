@@ -383,8 +383,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 param_weight).to(device=self.device)
 
             if self.model_in_update[model_id] == 1:
-                self.model_weights[model_id][p].data *= (sum(self.tasks_round) - self.tasks_round[model_id])
-                self.model_weights[model_id][p].data += param_weight; 
+                self.model_weights[model_id][p].data = param_weight; 
             else:
                 self.model_weights[model_id][p].data += param_weight
 
@@ -393,7 +392,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 d_type = self.model_weights[model_id][p].data.dtype
 
                 self.model_weights[model_id][p].data = (
-                    self.model_weights[model_id][p] / float(sum(self.tasks_round))).to(dtype=d_type)
+                    self.model_weights[model_id][p] / float(self.tasks_round[model_id])).to(dtype=d_type)
 
     def aggregate_client_group_weights(self, results, client_id):
         """Streaming weight aggregation. Similar to aggregate_client_weights,
