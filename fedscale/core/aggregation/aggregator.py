@@ -5,7 +5,7 @@ from fedscale.core.resource_manager import ResourceManager
 from fedscale.core import commons
 from fedscale.core.channels import job_api_pb2
 import fedscale.core.channels.job_api_pb2_grpc as job_api_pb2_grpc
-from random import Random
+from numpy.random import default_rng
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -40,7 +40,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         self.model_weights = [collections.OrderedDict() for _ in range(0, len(self.probs))]
         self.tasks_round = [0 for _ in range(0, len(self.probs))]
         self.model_in_update = [0 for _ in range(0, len(self.probs))]
-        self.model_rng = Random()
+        self.model_rng = default_rng()
 
         # ======== env information ========
         self.this_rank = 0
@@ -116,7 +116,6 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
         np.random.seed(seed)
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
-        self.model_rng.seed(seed)
 
     def init_control_communication(self):
         # Create communication channel between aggregator and worker
@@ -247,8 +246,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             if len(self.registered_executor_info) == len(self.executors):
                 self.round_completion_handler()
 
-    def select_model(self):
-        prob = self.model_rng.random()
+    def select_model(self, prob):
         for i in range(0, len(self.probs)):
             if prob <= self.probs[i]:
                 return i
@@ -265,11 +263,14 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             completionTimes = []
             completed_client_clock = {}
             self.mapped_models = {}
+            probs = self.default_rng(len(sampled_clients))
+            i = 0
 
             # 1. remove dummy clients that are not available to the end of training
             for client_to_run in sampled_clients:
                 client_cfg = self.client_conf.get(client_to_run, self.args)
-                model_id = self.select_model()
+                model_id = self.select_model(probs[i])
+                i += 1
                 exe_cost = self.client_manager.getCompletionTime(client_to_run,
                                                                  batch_size=client_cfg.batch_size, upload_step=client_cfg.local_steps,
                                                                  upload_size=self.model_update_size[model_id], download_size=self.model_update_size[model_id])
