@@ -362,7 +362,6 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             self.aggregate_client_weights(results, client_id)
 
         self.update_lock.release()
-        logging.info(f"{len(self.stats_util_accumulator)}\t{self.tasks_round}")
 
     def aggregate_client_weights(self, results, client_id):
         """May aggregate client updates on the fly"""
