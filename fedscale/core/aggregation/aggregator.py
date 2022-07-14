@@ -263,7 +263,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             completionTimes = []
             completed_client_clock = {}
             self.mapped_models = {}
-            probs = self.default_rng(len(sampled_clients))
+            probs = self.model_rng(len(sampled_clients))
             i = 0
 
             # 1. remove dummy clients that are not available to the end of training
@@ -363,7 +363,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
             self.aggregate_client_weights(results, client_id)
 
         self.update_lock.release()
-        logging.info(f"{len(self.stats_util_accumulator)}\t {self.tasks_round}")
+        logging.info(f"{len(self.stats_util_accumulator)}\t{self.tasks_round}")
 
     def aggregate_client_weights(self, results, client_id):
         """May aggregate client updates on the fly"""
