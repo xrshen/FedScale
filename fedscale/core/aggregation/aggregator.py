@@ -742,7 +742,7 @@ class Aggregator(job_api_pb2_grpc.JobServiceServicer):
                 if current_event == commons.UPLOAD_MODEL:
                     self.client_completion_handler(
                         self.deserialize_response(data), int(client_id))
-                    if len(self.stats_util_accumulator) == self.tasks_round:
+                    if len(self.stats_util_accumulator) == sum(self.tasks_round):
                         self.round_completion_handler()
 
                 elif current_event == commons.MODEL_TEST:
