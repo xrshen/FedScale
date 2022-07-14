@@ -129,15 +129,11 @@ class Executor(object):
 
     def Train(self, config):
         """Load train config and data to start training on client """
-        client_id, train_config = config['client_id'], config['task_config']
-
-        model = None
-        if 'model' in train_config and train_config['model'] is not None:
-            model = train_config['model']
+        client_id, train_config, model_id = config['client_id'], config['task_config'], config['model_id']
 
         client_conf = self.override_conf(train_config)
         train_res = self.training_handler(
-            clientId=client_id, conf=client_conf, model=model)
+            clientId=client_id, conf=client_conf, model_id=model_id)
 
         # Report execution completion meta information
         response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
@@ -154,13 +150,13 @@ class Executor(object):
     def Test(self, config):
         """Model Testing. By default, we test the accuracy on all data of clients in the test group"""
 
-        test_res = self.testing_handler(args=self.args)
+        test_res = self.testing_handler(args=self.args, model_id=config['model_id'])
         test_res = {'executorId': self.this_rank, 'results': test_res}
 
         # Report execution completion information
         response = self.aggregator_communicator.stub.CLIENT_EXECUTE_COMPLETION(
             job_api_pb2.CompleteRequest(
-                client_id=self.executor_id, executor_id=self.executor_id,
+                client_id=str(config['client_id']), executor_id=self.executor_id,
                 event=commons.MODEL_TEST, status=True, msg=None,
                 meta_result=None, data_result=self.serialize_response(test_res)
             )
@@ -207,11 +203,11 @@ class Executor(object):
         """
         return Client(conf)
 
-    def training_handler(self, clientId, conf, model=None):
+    def training_handler(self, clientId, conf, model_id):
         """Train model given client ids"""
 
         # load last global model
-        client_model = self.load_global_model() if model is None else model
+        client_model = self.model[model_id]
 
         conf.clientId, conf.device = clientId, self.device
         conf.tokenizer = tokenizer
@@ -232,11 +228,11 @@ class Executor(object):
 
         return train_res
 
-    def testing_handler(self, args):
+    def testing_handler(self, args, model_id):
         """Test model"""
         evalStart = time.time()
         device = self.device
-        model = self.load_global_model()
+        model = self.load_global_model()[model_id]
         if self.task == 'rl':
             client = RLClient(args)
             test_res = client.test(args, self.this_rank, model, device=device)
@@ -305,8 +301,7 @@ class Executor(object):
 
                 if current_event == commons.CLIENT_TRAIN:
                     train_config = self.deserialize_response(request.meta)
-                    train_model = self.deserialize_response(request.data)
-                    train_config['model'] = train_model
+                    train_config['model_id'] = self.deserialize_response(request.data)
                     train_config['client_id'] = int(train_config['client_id'])
                     client_id, train_res = self.Train(train_config)
 
@@ -318,7 +313,9 @@ class Executor(object):
                                                     ))
 
                 elif current_event == commons.MODEL_TEST:
-                    self.Test(self.deserialize_response(request.meta))
+                    config = self.deserialize_response(request.meta)
+                    config['model_id'] = self.deserialize_response(request.data)
+                    self.Test(config)
 
                 elif current_event == commons.UPDATE_MODEL:
                     broadcast_config = self.deserialize_response(request.data)
